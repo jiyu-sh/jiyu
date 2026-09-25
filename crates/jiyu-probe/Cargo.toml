@@ -1,0 +1,10 @@
+[package]
+name = "jiyu-probe"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Freedom of ... (probe)"
+documentation = "https://docs.rs/jiyu-probe"
+repository.workspace = true
+license.workspace = true

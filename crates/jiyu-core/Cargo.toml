@@ -1,0 +1,46 @@
+[package]
+name = "jiyu-core"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Freedom of ... (core)"
+documentation = "https://docs.rs/jiyu-core"
+repository.workspace = true
+license.workspace = true
+
+[dependencies.bon]
+workspace = true
+features = ["std"]
+
+[dependencies.non-empty-str]
+workspace = true
+features = ["std"]
+
+[dependencies.non-zero-size]
+workspace = true
+
+[dependencies.ownership]
+workspace = true
+optional = true
+features = ["std", "derive"]
+
+[dependencies.serde]
+workspace = true
+features = ["std", "derive"]
+
+[dependencies.thiserror]
+workspace = true
+features = ["std"]
+
+[dependencies.tokio]
+workspace = true
+features = ["fs"]
+
+[dependencies.tracing]
+workspace = true
+features = ["std"]
+
+[features]
+default = ["ownership"]
+ownership = ["dep:ownership", "non-empty-str/ownership"]

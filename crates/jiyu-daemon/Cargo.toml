@@ -1,0 +1,10 @@
+[package]
+name = "jiyu-daemon"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Freedom of ... (daemon)"
+documentation = "https://docs.rs/jiyu-daemon"
+repository.workspace = true
+license.workspace = true

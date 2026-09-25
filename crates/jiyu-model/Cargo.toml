@@ -1,0 +1,10 @@
+[package]
+name = "jiyu-model"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Freedom of ... (model)"
+documentation = "https://docs.rs/jiyu-model"
+repository.workspace = true
+license.workspace = true

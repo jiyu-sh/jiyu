@@ -1,0 +1,13 @@
+# build artifacts
+
+target/
+
+# remove if lock files should be included
+
+Cargo.lock
+
+flake.lock
+
+# nix output
+
+result/

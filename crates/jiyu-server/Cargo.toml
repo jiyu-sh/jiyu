@@ -1,0 +1,10 @@
+[package]
+name = "jiyu-server"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Freedom of ... (server)"
+documentation = "https://docs.rs/jiyu-server"
+repository.workspace = true
+license.workspace = true

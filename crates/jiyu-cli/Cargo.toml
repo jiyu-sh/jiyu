@@ -1,0 +1,54 @@
+[package]
+name = "jiyu-cli"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Freedom of ... (CLI)"
+documentation = "https://docs.rs/jiyu-cli"
+repository.workspace = true
+license.workspace = true
+
+[dependencies.anyhow]
+workspace = true
+features = ["std"]
+
+[dependencies.clap]
+workspace = true
+features = [
+    "std",
+    "color",
+    "help",
+    "usage",
+    "suggestions",
+    "error-context",
+    "derive",
+    "env",
+]
+
+[dependencies.jiyu-core]
+workspace = true
+
+[dependencies.non-empty-str]
+workspace = true
+features = ["std"]
+
+[dependencies.thiserror]
+workspace = true
+features = ["std"]
+
+[dependencies.tokio]
+workspace = true
+features = ["full"]
+
+[dependencies.tracing]
+workspace = true
+features = ["std"]
+
+[dependencies.tracing-subscriber]
+workspace = true
+features = ["std", "fmt", "ansi"]
+
+[[bin]]
+path = "src/main.rs"
+name = "jiyu"

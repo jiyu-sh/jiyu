@@ -1,0 +1,10 @@
+[package]
+name = "jiyu-sing-box"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Freedom of ... (sing-box)"
+documentation = "https://docs.rs/jiyu-sing-box"
+repository.workspace = true
+license.workspace = true

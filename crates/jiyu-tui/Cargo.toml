@@ -1,0 +1,10 @@
+[package]
+name = "jiyu-tui"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Freedom of ... (CLI)"
+documentation = "https://docs.rs/jiyu-tui"
+repository.workspace = true
+license.workspace = true

@@ -1,0 +1,10 @@
+[package]
+name = "jiyu-xray"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Freedom of ... (xray)"
+documentation = "https://docs.rs/jiyu-xray"
+repository.workspace = true
+license.workspace = true

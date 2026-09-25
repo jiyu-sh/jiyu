@@ -1,0 +1,10 @@
+[package]
+name = "jiyu-config"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Freedom of ... (config)"
+documentation = "https://docs.rs/jiyu-config"
+repository.workspace = true
+license.workspace = true
