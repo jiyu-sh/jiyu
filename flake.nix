@@ -1,5 +1,5 @@
 {
-  description = "Freedom of ...";
+  description = "Freedom of managing proxies.";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -47,65 +47,45 @@
 
           craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
 
+          cargoToml = fromTOML (builtins.readFile ./Cargo.toml);
+
+          version = cargoToml.workspace.package.version;
+
+          src = lib.cleanSource ./.;
+
+          cargoSrc = craneLib.cleanCargoSource src;
+
           rustBuildInputs = [
             pkgs.openssl
             pkgs.pkg-config
           ];
 
-          rustNativeBuildInputs = [
-            pkgs.pkg-config
-          ];
+          nativeBuildInputs = [ pkgs.pkg-config ];
 
-          cargoToml = fromTOML (builtins.readFile ./Cargo.toml);
+          cargoArtifacts = craneLib.buildDepsOnly {
+            pname = "jiyu";
 
-          fullSource = lib.cleanSource ./.;
+            inherit version;
 
-          cargoSource = craneLib.cleanCargoSource fullSource;
+            src = cargoSrc;
 
-          commonArgs = {
-            src = fullSource;
             strictDeps = true;
+
             buildInputs = rustBuildInputs;
-            nativeBuildInputs = rustNativeBuildInputs;
+
+            inherit nativeBuildInputs;
           };
 
-          depsArgs = {
-            pname = "jiyu-deps";
-            src = cargoSource;
-            version = cargoToml.workspace.package.version;
-          };
+          jiyu-cli = pkgs.callPackage ./default.nix {
+            inherit craneLib; # for `buildPackage`
 
-          cargoArtifacts = craneLib.buildDepsOnly (commonArgs // depsArgs);
+            name = "jiyu-cli";
 
-          rustPackage =
-            package:
-            {
-              binary ? package,
-              features ? [ ],
-            }:
-            let
-              version = cargoToml.workspace.package.version;
-              featureFlags = lib.concatStringsSep " " (map (feature: "--features ${feature}") features);
-              extraFlags = "--locked --package ${package} ${featureFlags}";
-              installPhase = ''
-                mkdir -p $out/bin
-                mv target/release/${binary} $out/bin/
-              '';
+            inherit version;
 
-              args = {
-                inherit version;
-                pname = package;
-
-                inherit cargoArtifacts;
-                cargoExtraArgs = extraFlags;
-
-                installPhaseCommand = installPhase;
-              };
-            in
-            craneLib.buildPackage (commonArgs // args);
-
-          jiyu-cli = rustPackage "jiyu-cli" {
             binary = "jiyu";
+
+            inherit cargoArtifacts; # for caching
           };
         in
         {

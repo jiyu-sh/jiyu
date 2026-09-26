@@ -4,9 +4,9 @@ target/
 
 # remove if lock files should be included
 
-Cargo.lock
+# Cargo.lock
 
-flake.lock
+# flake.lock
 
 # nix output
 

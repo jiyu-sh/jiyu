@@ -1,30 +1,51 @@
 {
+  # libraries
+  craneLib,
   lib,
-  rustPlatform,
+  # metadata
+  name,
+  version,
+  binary,
+  # packages
+  openssl,
+  pkg-config,
+  sing-box,
+  xray,
+  # artifacts
+  cargoArtifacts,
+  # hooks
   makeWrapper,
   versionCheckHook,
-  xray,
-  sing-box,
 }:
 let
-  version = "0.1.0";
+  deps = [
+    openssl
+    pkg-config
+  ];
 
   binPath = lib.makeBinPath [
     xray
     sing-box
   ];
+
+  src = lib.cleanSource ./.;
+
+  extraArgs = "--locked --package ${name} --bin ${binary}";
+
 in
 
-rustPlatform.buildRustPackage {
-  pname = "jiyu";
+craneLib.buildPackage {
+  pname = name;
 
-  inherit version;
+  inherit version src;
 
-  src = ./.;
+  strictDeps = true;
 
-  cargoLock = {
-    lockFile = ./Cargo.lock;
-  };
+  buildInputs = deps;
+
+  inherit cargoArtifacts;
+
+  cargoExtraArgs = extraArgs;
 
   nativeBuildInputs = [ makeWrapper ];
 
@@ -32,16 +53,16 @@ rustPlatform.buildRustPackage {
   doInstallCheck = true;
 
   postInstall = ''
-    wrapProgram $out/bin/jiyu --prefix PATH : ${binPath}
+    wrapProgram $out/bin/${binary} --prefix PATH : ${binPath}
   '';
 
   meta = {
-    description = "Freedom of ...";
+    description = "Freedom of managing proxies.";
     homepage = "https://jiyu.sh/";
     changelog = "https://releases.jiyu.sh/v${version}";
     platforms = lib.platforms.all;
     license = lib.licenses.mit;
     maintainers = [ lib.maintainers.nekitdev ];
-    mainProgram = "jiyu";
+    mainProgram = binary;
   };
 }

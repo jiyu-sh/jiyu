@@ -1,10 +1,10 @@
 [package]
-name = "jiyu-model"
+name = "jiyu-web"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "Freedom of managing proxies. (model)"
-documentation = "https://docs.rs/jiyu-model"
+description = "Freedom of managing proxies. (web)"
+documentation = "https://docs.rs/jiyu-web"
 repository.workspace = true
 license.workspace = true
