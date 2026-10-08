@@ -5,4 +5,4 @@
 `jiyu` (自由, jiyū — freedom)...
 
 [jiyu.sh]: https://jiyu.sh/
-[install]: https://jiyu.sh/install
+[install]: https://install.jiyu.sh/

@@ -3,7 +3,7 @@ use ownership::IntoOwned;
 
 use serde::{Deserialize, Serialize};
 
-use crate::trigger_capnp::Trigger as TriggerSchema;
+use crate::{schema::Primitive, trigger_capnp::Trigger as Value};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 #[cfg_attr(feature = "ownership", derive(IntoOwned))]
@@ -15,32 +15,36 @@ pub enum Trigger {
     Fail,
 }
 
+impl From<Value> for Trigger {
+    fn from(value: Value) -> Self {
+        Self::from_value(value)
+    }
+}
+
+impl From<Trigger> for Value {
+    fn from(trigger: Trigger) -> Value {
+        trigger.into_value()
+    }
+}
+
+impl Primitive for Trigger {
+    type Value = Value;
+}
+
 impl Trigger {
-    pub const fn from_schema(schema: TriggerSchema) -> Self {
-        match schema {
-            TriggerSchema::Manual => Self::Manual,
-            TriggerSchema::Timer => Self::Timer,
-            TriggerSchema::Fail => Self::Fail,
+    pub const fn from_value(value: Value) -> Self {
+        match value {
+            Value::Manual => Self::Manual,
+            Value::Timer => Self::Timer,
+            Value::Fail => Self::Fail,
         }
     }
 
-    pub const fn into_schema(self) -> TriggerSchema {
+    pub const fn into_value(self) -> Value {
         match self {
-            Self::Manual => TriggerSchema::Manual,
-            Self::Timer => TriggerSchema::Timer,
-            Self::Fail => TriggerSchema::Fail,
+            Self::Manual => Value::Manual,
+            Self::Timer => Value::Timer,
+            Self::Fail => Value::Fail,
         }
-    }
-}
-
-impl From<TriggerSchema> for Trigger {
-    fn from(schema: TriggerSchema) -> Self {
-        Self::from_schema(schema)
-    }
-}
-
-impl From<Trigger> for TriggerSchema {
-    fn from(trigger: Trigger) -> Self {
-        trigger.into_schema()
     }
 }

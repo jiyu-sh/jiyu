@@ -1,6 +1,6 @@
 use bon::Builder;
 
-use capnp::Error;
+use capnp::Result;
 
 #[cfg(feature = "ownership")]
 use ownership::IntoOwned;
@@ -11,7 +11,7 @@ use jiyu_core::id::Id;
 
 use crate::{
     request_capnp::{candidate, connect, payload, replace, request, rotate, runtime},
-    schema::{FromReader, Schema, ToBuilder},
+    schema::{Builder, Core, FromReader, Reader, ToBuilder},
     trigger::Trigger,
     version::Version,
 };
@@ -25,13 +25,12 @@ pub struct Request {
     pub payload: Payload,
 }
 
-impl FromReader for Request {
-    type Reader<'r>
-        = request::Reader<'r>
-    where
-        Self: 'r;
+impl Core for Request {
+    type Owned = request::Owned;
+}
 
-    fn from_reader(reader: Self::Reader<'_>) -> Result<Self, Error> {
+impl FromReader for Request {
+    fn from_reader(reader: Reader<'_, Self>) -> Result<Self> {
         let version = reader.get_version();
 
         let payload_reader = reader.get_payload()?;
@@ -55,13 +54,12 @@ pub enum Payload {
     Rotate(Rotate),
 }
 
-impl FromReader for Payload {
-    type Reader<'r>
-        = payload::Reader<'r>
-    where
-        Self: 'r;
+impl Core for Payload {
+    type Owned = payload::Owned;
+}
 
-    fn from_reader(reader: Self::Reader<'_>) -> Result<Self, Error> {
+impl FromReader for Payload {
+    fn from_reader(reader: Reader<'_, Self>) -> Result<Self> {
         let which = reader.which()?;
 
         let payload = match which {
@@ -88,12 +86,7 @@ impl FromReader for Payload {
 }
 
 impl ToBuilder for Payload {
-    type Builder<'b>
-        = payload::Builder<'b>
-    where
-        Self: 'b;
-
-    fn to_builder(&self, mut builder: Self::Builder<'_>) -> Result<(), Error> {
+    fn to_builder(&self, mut builder: Builder<'_, Self>) -> Result<()> {
         match self {
             Self::Ping => {
                 builder.set_ping(());
@@ -117,13 +110,6 @@ impl ToBuilder for Payload {
     }
 }
 
-impl Schema for Payload {
-    type Owned<'s>
-        = payload::Owned
-    where
-        Self: 's;
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 #[cfg_attr(feature = "ownership", derive(IntoOwned))]
 #[serde(rename_all = "snake_case")]
@@ -135,13 +121,12 @@ pub enum Runtime {
     Replace(Replace),
 }
 
-impl FromReader for Runtime {
-    type Reader<'r>
-        = runtime::Reader<'r>
-    where
-        Self: 'r;
+impl Core for Runtime {
+    type Owned = runtime::Owned;
+}
 
-    fn from_reader(reader: Self::Reader<'_>) -> Result<Self, Error> {
+impl FromReader for Runtime {
+    fn from_reader(reader: Reader<'_, Self>) -> Result<Self> {
         let which = reader.which()?;
 
         let runtime = match which {
@@ -168,12 +153,7 @@ impl FromReader for Runtime {
 }
 
 impl ToBuilder for Runtime {
-    type Builder<'b>
-        = runtime::Builder<'b>
-    where
-        Self: 'b;
-
-    fn to_builder(&self, mut builder: Self::Builder<'_>) -> Result<(), Error> {
+    fn to_builder(&self, mut builder: Builder<'_, Self>) -> Result<()> {
         match self {
             Self::Status => {
                 builder.set_status(());
@@ -197,13 +177,6 @@ impl ToBuilder for Runtime {
     }
 }
 
-impl Schema for Runtime {
-    type Owned<'s>
-        = runtime::Owned
-    where
-        Self: 's;
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Builder)]
 #[cfg_attr(feature = "ownership", derive(IntoOwned))]
 pub struct Connect {
@@ -217,13 +190,12 @@ impl Connect {
     }
 }
 
-impl FromReader for Connect {
-    type Reader<'r>
-        = connect::Reader<'r>
-    where
-        Self: 'r;
+impl Core for Connect {
+    type Owned = connect::Owned;
+}
 
-    fn from_reader(reader: Self::Reader<'_>) -> Result<Self, Error> {
+impl FromReader for Connect {
+    fn from_reader(reader: Reader<'_, Self>) -> Result<Self> {
         let id = Id::new(reader.get_id());
 
         let connect = Self::builder().id(id).build();
@@ -233,29 +205,17 @@ impl FromReader for Connect {
 }
 
 impl ToBuilder for Connect {
-    type Builder<'b>
-        = connect::Builder<'b>
-    where
-        Self: 'b;
-
-    fn to_builder(&self, mut builder: Self::Builder<'_>) -> Result<(), Error> {
+    fn to_builder(&self, mut builder: Builder<'_, Self>) -> Result<()> {
         builder.set_id(self.id().get());
 
         Ok(())
     }
 }
 
-impl Schema for Connect {
-    type Owned<'s>
-        = connect::Owned
-    where
-        Self: 's;
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Builder)]
 #[cfg_attr(feature = "ownership", derive(IntoOwned))]
 pub struct Replace {
-    #[builder(default)]
+    #[builder(default, into)]
     pub trigger: Trigger,
     #[builder(default, into)]
     pub candidate: Candidate,
@@ -271,17 +231,16 @@ impl Replace {
     }
 }
 
-impl FromReader for Replace {
-    type Reader<'r>
-        = replace::Reader<'r>
-    where
-        Self: 'r;
+impl Core for Replace {
+    type Owned = replace::Owned;
+}
 
-    fn from_reader(reader: Self::Reader<'_>) -> Result<Self, Error> {
-        let trigger_schema = reader.get_trigger()?;
+impl FromReader for Replace {
+    fn from_reader(reader: Reader<'_, Self>) -> Result<Self> {
+        let trigger_value = reader.get_trigger()?;
         let candidate_reader = reader.get_candidate()?;
 
-        let trigger = Trigger::from_schema(trigger_schema);
+        let trigger: Trigger = trigger_value.into();
 
         let candidate = Candidate::from_reader(candidate_reader)?;
 
@@ -295,13 +254,8 @@ impl FromReader for Replace {
 }
 
 impl ToBuilder for Replace {
-    type Builder<'b>
-        = replace::Builder<'b>
-    where
-        Self: 'b;
-
-    fn to_builder(&self, mut builder: Self::Builder<'_>) -> Result<(), Error> {
-        builder.set_trigger(self.trigger().into_schema());
+    fn to_builder(&self, mut builder: Builder<'_, Self>) -> Result<()> {
+        builder.set_trigger(self.trigger().into());
 
         let candidate_builder = builder.init_candidate();
 
@@ -309,13 +263,6 @@ impl ToBuilder for Replace {
 
         Ok(())
     }
-}
-
-impl Schema for Replace {
-    type Owned<'s>
-        = replace::Owned
-    where
-        Self: 's;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
@@ -358,13 +305,12 @@ impl Candidate {
     }
 }
 
-impl FromReader for Candidate {
-    type Reader<'r>
-        = candidate::Reader<'r>
-    where
-        Self: 'r;
+impl Core for Candidate {
+    type Owned = candidate::Owned;
+}
 
-    fn from_reader(reader: Self::Reader<'_>) -> Result<Self, Error> {
+impl FromReader for Candidate {
+    fn from_reader(reader: Reader<'_, Self>) -> Result<Self> {
         let which = reader.which()?;
 
         let candidate = match which {
@@ -377,9 +323,7 @@ impl FromReader for Candidate {
 }
 
 impl ToBuilder for Candidate {
-    type Builder<'b> = candidate::Builder<'b>;
-
-    fn to_builder(&self, mut builder: Self::Builder<'_>) -> Result<(), Error> {
+    fn to_builder(&self, mut builder: Builder<'_, Self>) -> Result<()> {
         match self.id() {
             None => {
                 builder.set_any(());
@@ -393,13 +337,6 @@ impl ToBuilder for Candidate {
     }
 }
 
-impl Schema for Candidate {
-    type Owned<'s>
-        = candidate::Owned
-    where
-        Self: 's;
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 #[cfg_attr(feature = "ownership", derive(IntoOwned))]
 #[serde(rename_all = "snake_case")]
@@ -410,13 +347,12 @@ pub enum Rotate {
     Enable,
 }
 
-impl FromReader for Rotate {
-    type Reader<'r>
-        = rotate::Reader<'r>
-    where
-        Self: 'r;
+impl Core for Rotate {
+    type Owned = rotate::Owned;
+}
 
-    fn from_reader(reader: Self::Reader<'_>) -> Result<Self, Error> {
+impl FromReader for Rotate {
+    fn from_reader(reader: Reader<'_, Self>) -> Result<Self> {
         let which = reader.which()?;
 
         let rotate = match which {
@@ -430,12 +366,7 @@ impl FromReader for Rotate {
 }
 
 impl ToBuilder for Rotate {
-    type Builder<'b>
-        = rotate::Builder<'b>
-    where
-        Self: 'b;
-
-    fn to_builder(&self, mut builder: Self::Builder<'_>) -> Result<(), Error> {
+    fn to_builder(&self, mut builder: Builder<'_, Self>) -> Result<()> {
         match self {
             Self::Status => {
                 builder.set_status(());
@@ -450,11 +381,4 @@ impl ToBuilder for Rotate {
 
         Ok(())
     }
-}
-
-impl Schema for Rotate {
-    type Owned<'s>
-        = rotate::Owned
-    where
-        Self: 's;
 }

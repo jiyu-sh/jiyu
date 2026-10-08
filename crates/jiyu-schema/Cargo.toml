@@ -30,6 +30,9 @@ features = ["std", "derive"]
 workspace = true
 features = ["std"]
 
+[dependencies.trait-aliases]
+workspace = true
+
 [dependencies.jiyu-core]
 workspace = true
 

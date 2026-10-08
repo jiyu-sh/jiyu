@@ -3,6 +3,8 @@ use ownership::IntoOwned;
 
 use serde::{Deserialize, Serialize};
 
+use crate::schema::Primitive;
+
 pub type Value = u8;
 
 pub const CURRENT: Value = 1;
@@ -25,6 +27,16 @@ impl From<Value> for Version {
     fn from(value: Value) -> Self {
         Self::new(value)
     }
+}
+
+impl From<Version> for Value {
+    fn from(version: Version) -> Self {
+        version.get()
+    }
+}
+
+impl Primitive for Version {
+    type Value = Value;
 }
 
 impl Version {

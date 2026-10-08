@@ -1,101 +1,101 @@
 use capnp::{
-    Error,
+    Result,
     io::{BufRead, Read, Write},
-    message::{Allocator, Builder, HeapAllocator, ReaderOptions},
-    serialize::{read_message, write_message},
+    message::{
+        Allocator, Builder as MessageBuilder, HeapAllocator, Reader as MessageReader, ReaderOptions,
+    },
+    serialize::{OwnedSegments, read_message, write_message},
     serialize_packed::{
         read_message as read_message_packed, write_message as write_message_packed,
     },
-    traits::{FromPointerBuilder, FromPointerReader, Owned},
+    traits::Owned,
 };
+
+use trait_aliases::trait_aliases;
 
 use crate::by::By;
 
-pub trait FromReader: Sized {
-    type Reader<'r>: FromPointerReader<'r>
-    where
-        Self: 'r;
+pub type Value<P> = <P as Primitive>::Value;
 
-    fn from_reader(reader: Self::Reader<'_>) -> Result<Self, Error>;
+trait_aliases! {
+    #[trait_alias(T)]
+    pub trait Convertible<U> = From<U> + Into<U>;
 }
 
-pub trait FromRead: FromReader {
-    fn read<R: Read>(read: R) -> Result<Self, Error> {
-        Self::read_with(read, ReaderOptions::new())
+pub trait Primitive: Convertible<Self::Value> {
+    type Value;
+}
+
+pub trait Core {
+    type Owned: Owned;
+}
+
+pub type Reader<'r, C> = <<C as Core>::Owned as Owned>::Reader<'r>;
+pub type Builder<'b, C> = <<C as Core>::Owned as Owned>::Builder<'b>;
+
+pub trait FromReader: Core + Sized {
+    fn from_reader(reader: Reader<'_, Self>) -> Result<Self>;
+}
+
+pub trait ToBuilder: Core {
+    fn to_builder(&self, builder: Builder<'_, Self>) -> Result<()>;
+}
+
+pub type OwnedMessage = MessageReader<OwnedSegments>;
+
+pub trait Decode: FromReader {
+    fn decode<R: Read>(read: R) -> Result<Self> {
+        Self::decode_with(read, ReaderOptions::new())
     }
 
-    fn read_with<R: Read>(read: R, options: ReaderOptions) -> Result<Self, Error> {
-        let owned = read_message(read, options)?;
-
-        let reader = owned.get_root()?;
-
-        let value = Self::from_reader(reader)?;
-
-        Ok(value)
+    fn decode_with<R: Read>(read: R, options: ReaderOptions) -> Result<Self> {
+        read_message(read, options).and_then(Self::decode_message)
     }
 
-    fn read_packed<B: BufRead>(read: B) -> Result<Self, Error> {
-        Self::read_packed_with(read, ReaderOptions::new())
+    fn decode_packed<B: BufRead>(buffered: B) -> Result<Self> {
+        Self::decode_packed_with(buffered, ReaderOptions::new())
     }
 
-    fn read_packed_with<B: BufRead>(read: B, options: ReaderOptions) -> Result<Self, Error> {
-        let owned = read_message_packed(read, options)?;
+    fn decode_packed_with<B: BufRead>(buffered: B, options: ReaderOptions) -> Result<Self> {
+        read_message_packed(buffered, options).and_then(Self::decode_message)
+    }
 
-        let reader = owned.get_root()?;
+    fn decode_message(message: OwnedMessage) -> Result<Self> {
+        let reader = message.get_root()?;
 
-        let value = Self::from_reader(reader)?;
+        let decoded = Self::from_reader(reader)?;
 
-        Ok(value)
+        Ok(decoded)
     }
 }
 
-impl<T: FromReader> FromRead for T {}
-
-pub trait ToBuilder {
-    type Builder<'b>: FromPointerBuilder<'b>
-    where
-        Self: 'b;
-
-    fn to_builder(&self, builder: Self::Builder<'_>) -> Result<(), Error>;
-}
-
-pub type MessageWith<A> = Builder<A>;
+pub type MessageWith<A> = MessageBuilder<A>;
 pub type Message = MessageWith<HeapAllocator>;
 
-pub trait ToWrite: ToBuilder {
-    fn write<W: Write>(&self, write: W) -> Result<(), Error> {
-        self.write_with(write, HeapAllocator::new())
+pub trait Encode: ToBuilder {
+    fn encode<W: Write>(&self, write: W) -> Result<()> {
+        self.encode_with(write, HeapAllocator::new())
     }
 
-    fn write_with<W: Write, A: Allocator>(&self, write: W, allocator: A) -> Result<(), Error> {
-        let message = self.message_with(allocator)?;
-
-        write_message(write, message.by_ref())?;
-
-        Ok(())
+    fn encode_with<W: Write, A: Allocator>(&self, write: W, allocator: A) -> Result<()> {
+        self.encode_message_with(allocator)
+            .and_then(|message| write_message(write, message.by_ref()))
     }
 
-    fn write_packed<W: Write>(&self, write: W) -> Result<(), Error> {
-        self.write_packed_with(write, HeapAllocator::new())
+    fn encode_packed<W: Write>(&self, write: W) -> Result<()> {
+        self.encode_packed_with(write, HeapAllocator::new())
     }
 
-    fn write_packed_with<W: Write, A: Allocator>(
-        &self,
-        write: W,
-        allocator: A,
-    ) -> Result<(), Error> {
-        let message = self.message_with(allocator)?;
-
-        write_message_packed(write, message.by_ref())?;
-
-        Ok(())
+    fn encode_packed_with<W: Write, A: Allocator>(&self, write: W, allocator: A) -> Result<()> {
+        self.encode_message_with(allocator)
+            .and_then(|message| write_message_packed(write, message.by_ref()))
     }
 
-    fn message(&self) -> Result<Message, Error> {
-        self.message_with(HeapAllocator::new())
+    fn encode_message(&self) -> Result<Message> {
+        self.encode_message_with(HeapAllocator::new())
     }
 
-    fn message_with<A: Allocator>(&self, allocator: A) -> Result<MessageWith<A>, Error> {
+    fn encode_message_with<A: Allocator>(&self, allocator: A) -> Result<MessageWith<A>> {
         let mut message = MessageWith::new(allocator);
 
         let builder = message.init_root();
@@ -106,10 +106,10 @@ pub trait ToWrite: ToBuilder {
     }
 }
 
-impl<T: ToBuilder> ToWrite for T {}
+trait_aliases! {
+    #[trait_alias(S)]
+    pub trait Schema = FromReader + ToBuilder;
 
-pub trait Schema: FromReader + ToBuilder {
-    type Owned<'s>: Owned<Reader<'s> = Self::Reader<'s>, Builder<'s> = Self::Builder<'s>>
-    where
-        Self: 's;
+    #[trait_alias(T)]
+    pub trait Encoding = Decode + Encode;
 }

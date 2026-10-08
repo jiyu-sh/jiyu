@@ -1,15 +1,13 @@
 [workspace]
-members = [
-    "crates/*"
-]
+members = ["crates/*"]
 resolver = "3"
 
 [workspace.package]
 version = "0.1.0"
-authors = ["nekitdev <nekit@nekit.dev>"]
+authors = ["Jiyu <hello@jiyu.sh>"]
 edition = "2024"
-rust-version = "1.98"
-repository = "https://github.com/nekitdev/jiyu"
+rust-version = "1.99"
+repository = "https://github.com/jiyu-sh/jiyu"
 license = "MIT"
 
 [workspace.dependencies.anyhow]
@@ -17,7 +15,7 @@ version = "1.0.104"
 default-features = false
 
 [workspace.dependencies.bon]
-version = "3.10.1"
+version = "3.10.2"
 default-features = false
 
 [workspace.dependencies.capnp]
@@ -49,19 +47,19 @@ version = "0.3.34"
 default-features = false
 
 [workspace.dependencies.jiff]
-version = "0.2.37"
+version = "0.2.38"
 default-features = false
 
 [workspace.dependencies.non-empty-iter]
-version = "0.3.1"
+version = "0.4.0"
 default-features = false
 
 [workspace.dependencies.non-empty-slice]
-version = "0.6.0"
+version = "0.7.0"
 default-features = false
 
 [workspace.dependencies.non-empty-str]
-version = "0.12.0"
+version = "0.13.0"
 default-features = false
 
 [workspace.dependencies.non-zero-size]
@@ -69,7 +67,7 @@ version = "0.2.0"
 default-features = false
 
 [workspace.dependencies.ownership]
-version = "0.3.0"
+version = "0.4.0"
 default-features = false
 
 [workspace.dependencies.reqwest]
@@ -85,11 +83,11 @@ version = "1.0.151"
 default-features = false
 
 [workspace.dependencies.thiserror]
-version = "2.0.20"
+version = "2.0.21"
 default-features = false
 
 [workspace.dependencies.tokio]
-version = "1.53.1"
+version = "1.53.2"
 default-features = false
 
 [workspace.dependencies.tracing]
@@ -100,12 +98,16 @@ default-features = false
 version = "0.3.23"
 default-features = false
 
+[workspace.dependencies.trait-aliases]
+version = "0.4.0"
+default-features = false
+
 [workspace.dependencies.url]
 version = "2.5.8"
 default-features = false
 
 [workspace.dependencies.uuid]
-version = "1.26.1"
+version = "1.27.0"
 default-features = false
 
 [workspace.dependencies.jiyu-cli]
