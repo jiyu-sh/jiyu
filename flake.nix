@@ -90,7 +90,7 @@
         in
         {
           packages = {
-            inherit jiyu-cli;
+            jiyu = jiyu-cli;
             default = jiyu-cli;
           };
 
@@ -104,8 +104,22 @@
             nativeBuildInputs = [ rustToolchain ];
           };
         };
-      flake.nixosModules.jiyu = {
-        imports = [ ./module.nix ];
-      };
+      flake.nixosModules.jiyu =
+        {
+          lib,
+          pkgs,
+          withSystem,
+          ...
+        }:
+        let
+          system = pkgs.stdenv.hostPlatform.system;
+
+          jiyu = withSystem system ({ self', ... }: self'.package.jiyu);
+        in
+        {
+          imports = [ ./module.nix ];
+
+          services.jiyu.package = lib.mkDefault jiyu;
+        };
     };
 }
