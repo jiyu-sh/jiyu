@@ -59,7 +59,6 @@ craneLib.buildPackage {
   meta = {
     description = "Freedom of managing proxies.";
     homepage = "https://jiyu.sh/";
-    changelog = "https://releases.jiyu.sh/v${version}";
     platforms = lib.platforms.all;
     license = lib.licenses.mit;
     maintainers = [ lib.maintainers.nekitdev ];

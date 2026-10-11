@@ -104,5 +104,8 @@
             nativeBuildInputs = [ rustToolchain ];
           };
         };
+      flake.nixosModules.default = {
+        imports = [ ./module.nix ];
+      };
     };
 }
