@@ -25,101 +25,103 @@
       rust-overlay,
       ...
     }@inputs:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = import systems;
+    flake-parts.lib.mkFlake { inherit inputs; } (
+      { withSystem, ... }:
+      {
+        systems = import systems;
 
-      perSystem =
-        {
-          system,
-          ...
-        }:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [
-              rust-overlay.overlays.default
+        perSystem =
+          {
+            system,
+            ...
+          }:
+          let
+            pkgs = import nixpkgs {
+              inherit system;
+              overlays = [
+                rust-overlay.overlays.default
+              ];
+            };
+
+            lib = pkgs.lib;
+
+            rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+
+            craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+
+            cargoToml = fromTOML (builtins.readFile ./Cargo.toml);
+
+            version = cargoToml.workspace.package.version;
+
+            src = lib.cleanSource ./.;
+
+            cargoSrc = craneLib.cleanCargoSource src;
+
+            rustBuildInputs = [
+              pkgs.openssl
+              pkgs.pkg-config
             ];
+
+            nativeBuildInputs = [ pkgs.pkg-config ];
+
+            cargoArtifacts = craneLib.buildDepsOnly {
+              pname = "jiyu";
+
+              inherit version;
+
+              src = cargoSrc;
+
+              strictDeps = true;
+
+              buildInputs = rustBuildInputs;
+
+              inherit nativeBuildInputs;
+            };
+
+            jiyu-cli = pkgs.callPackage ./default.nix {
+              inherit craneLib; # for `buildPackage`
+
+              name = "jiyu-cli";
+
+              inherit version;
+
+              binary = "jiyu";
+
+              inherit cargoArtifacts; # for caching
+            };
+          in
+          {
+            packages = {
+              jiyu = jiyu-cli;
+              default = jiyu-cli;
+            };
+
+            checks = {
+              inherit jiyu-cli;
+            };
+
+            devShells.default = pkgs.mkShell {
+              name = "jiyu-dev";
+              buildInputs = rustBuildInputs;
+              nativeBuildInputs = [ rustToolchain ];
+            };
           };
+        flake.nixosModules.jiyu =
+          {
+            lib,
+            pkgs,
+            ...
+          }:
+          let
+            system = pkgs.stdenv.hostPlatform.system;
 
-          lib = pkgs.lib;
+            jiyu = withSystem system ({ self', ... }: self'.packages.jiyu);
+          in
+          {
+            imports = [ ./module.nix ];
 
-          rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-
-          craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
-
-          cargoToml = fromTOML (builtins.readFile ./Cargo.toml);
-
-          version = cargoToml.workspace.package.version;
-
-          src = lib.cleanSource ./.;
-
-          cargoSrc = craneLib.cleanCargoSource src;
-
-          rustBuildInputs = [
-            pkgs.openssl
-            pkgs.pkg-config
-          ];
-
-          nativeBuildInputs = [ pkgs.pkg-config ];
-
-          cargoArtifacts = craneLib.buildDepsOnly {
-            pname = "jiyu";
-
-            inherit version;
-
-            src = cargoSrc;
-
-            strictDeps = true;
-
-            buildInputs = rustBuildInputs;
-
-            inherit nativeBuildInputs;
+            services.jiyu.package = lib.mkDefault jiyu;
           };
-
-          jiyu-cli = pkgs.callPackage ./default.nix {
-            inherit craneLib; # for `buildPackage`
-
-            name = "jiyu-cli";
-
-            inherit version;
-
-            binary = "jiyu";
-
-            inherit cargoArtifacts; # for caching
-          };
-        in
-        {
-          packages = {
-            jiyu = jiyu-cli;
-            default = jiyu-cli;
-          };
-
-          checks = {
-            inherit jiyu-cli;
-          };
-
-          devShells.default = pkgs.mkShell {
-            name = "jiyu-dev";
-            buildInputs = rustBuildInputs;
-            nativeBuildInputs = [ rustToolchain ];
-          };
-        };
-      flake.nixosModules.jiyu =
-        {
-          lib,
-          pkgs,
-          withSystem,
-          ...
-        }:
-        let
-          system = pkgs.stdenv.hostPlatform.system;
-
-          jiyu = withSystem system ({ self', ... }: self'.package.jiyu);
-        in
-        {
-          imports = [ ./module.nix ];
-
-          services.jiyu.package = lib.mkDefault jiyu;
-        };
-    };
+      }
+    );
 }
